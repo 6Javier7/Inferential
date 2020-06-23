@@ -1,0 +1,80 @@
+---
+title: "Statistical inference with the GSS data"
+author: "Javier Montaño"
+date: "22 de junio de 2020"
+output: html_document
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(tidyverse)
+```
+
+### Load data
+
+```{r load-data}
+load("C:/Users/Javi3/Documents/JAVIER/R/Duke/gss.RData")
+```
+
+* * *
+
+## Part 1: Data
+
+the data sample if collected anually by phone surveys so it seens very good, fot the independence of the participants, i belive that each of the participants are choose ramdonly so is nice.
+
+* * *
+
+## Part 2: Research question
+
+Are acceptance of the homosexuality along the time depends of the sex and the education degrees of a person?
+
+we must concern of this issuu becouse as a members of a plural and multydiverse society, it becomes necesary to know the factors thats makes us more respefull to the diferents of the members of our comunities
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+###Data
+
+```{r}
+data1 <- gss[!is.na(gss$homosex),] %>% select(year, sex, degree, homosex) %>% group_by(year, sex, degree, homosex) %>% summarise(people = n(), .groups = "drop")
+data2 <- gss[!is.na(gss$homosex),] %>% select(year, sex, degree) %>% group_by(year, sex, degree) %>% summarise(people1 = n(), .groups = "drop")
+data <- merge(data1, data2)
+data <- data %>% mutate(proportion = people/people1)
+data <- data[,c(1, 2, 3, 4, 7)] %>% filter(homosex %in% c("Always Wrong", "Not Wrong At All"))
+
+```
+
+###Plot
+
+the plot shows us the change of the proportion of people who think that the homosexual relationships are **Always Wrong* in the upper and the proportion of people who think that homosexual relationship are *No Wrong At All* each line has a type represent the sex of the people and the color of the linerepresent the higest education degree.
+
+```{r}
+ggplot(data) + geom_line(mapping = aes(x = year, y = proportion, color = degree, linetype = sex)) + facet_grid(rows = vars(homosex)) + theme_classic()
+```
+
+in general along the time the proportion of people who think is *Wrong* is smaller and the proportion of people who think taht is *No Wrong* is bigger, futhermore the proportion is increment with more educatinal level of the people and the women has a lager proportion than men.
+
+###Summary
+
+the summary shows us the means, the medians and the estandard deviation for each year in each sex and educational degree.
+
+```{r}
+data %>% group_by(sex, degree, homosex) %>% summarise(meanp = mean(proportion), medianp = median(proportion),desviationp = sd(proportion))
+```
+
+shows the same behavior seen previously.
+
+* * *
+
+## Part 4: Inference
+
+```{r}
+mod <- lm(proportion ~ homosex + degree + sex + year, data)
+anova(mod)
+```
+
+the anova shows us differecies in the proporciton of people who thinks either homosesuality is Wrong or Not, equally shows us significative diferencies within the people with some educational level of degree and no diference for the sex or the year.
